@@ -1,0 +1,6 @@
+name: silver_taxi_checkpoint
+config_version: 1.0
+class_name: Checkpoint
+expectation_suite_name: silver_taxi_suite
+run_name_template: "%Y%m%d-%H%M%S-silver"
+validations: []

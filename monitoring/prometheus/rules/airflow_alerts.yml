@@ -1,0 +1,38 @@
+groups:
+  - name: airflow_and_infra
+    rules:
+      - alert: ExporterDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Exporter or target is down"
+          description: "Target {{ $labels.job }} on {{ $labels.instance }} is down for more than 2 minutes."
+
+      - alert: AirflowSchedulerHeartbeatMissing
+        expr: absent(airflow_scheduler_heartbeat)
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Airflow scheduler heartbeat metric missing"
+          description: "No airflow_scheduler_heartbeat metric for 5 minutes. Scheduler may be stuck or metrics are not emitted."
+
+      - alert: RedisTooManyRejectedConnections
+        expr: increase(redis_rejected_connections_total[10m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis rejected connections"
+          description: "Redis has rejected new connections in the last 10 minutes."
+
+      - alert: PostgresTooManyConnections
+        expr: pg_stat_activity_count > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Postgres connection count is high"
+          description: "Postgres active connections are above 80 for 5 minutes."

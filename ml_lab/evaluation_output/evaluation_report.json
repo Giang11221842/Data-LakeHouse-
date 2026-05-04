@@ -1,0 +1,64 @@
+{
+  "model": "XGBoost Dual-Zone (High/Low Demand)",
+  "objective": "reg:tweedie",
+  "target": "Daily taxi demand per PULocationID",
+  "features": [
+    "PULocationID",
+    "day_of_week",
+    "is_weekend",
+    "month",
+    "lag_28d",
+    "lag_35d",
+    "rolling_28d_avg",
+    "is_holiday",
+    "feature_year"
+  ],
+  "data_split": {
+    "train": "< 2025-07-01",
+    "validation": "2025-07-01 ~ 2025-11-01",
+    "test": "≥ 2025-11-01"
+  },
+  "date_range": {
+    "min": "2021-02-05",
+    "max": "2026-03-01"
+  },
+  "total_rows": 397383,
+  "metrics_high": {
+    "RMSE": 453.8919,
+    "MAE": 274.6561,
+    "MAPE_%": 137.24,
+    "sMAPE_%": 17.93,
+    "R2": 0.9097,
+    "N_samples": 7560
+  },
+  "metrics_low": {
+    "RMSE": 24.7974,
+    "MAE": 13.3106,
+    "MAPE_%": 36.11,
+    "sMAPE_%": 29.23,
+    "R2": 0.843,
+    "N_samples": 20513
+  },
+  "metrics_combined": {
+    "RMSE": 236.4942,
+    "MAE": 83.6904,
+    "MAPE_%": 63.34,
+    "sMAPE_%": 26.19,
+    "R2": 0.9545,
+    "N_samples": 28073
+  },
+  "model_high_params": {
+    "best_iteration": 384,
+    "best_score": 10.609063,
+    "n_estimators_used": 385,
+    "max_depth": 8,
+    "learning_rate": 0.03
+  },
+  "model_low_params": {
+    "best_iteration": 178,
+    "best_score": 7.256227,
+    "n_estimators_used": 179,
+    "max_depth": 7,
+    "learning_rate": 0.03
+  }
+}
