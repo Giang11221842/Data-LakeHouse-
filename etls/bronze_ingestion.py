@@ -252,7 +252,7 @@ def _get_latest_successful_ingestion(
     month: int,
 ) -> Optional[Dict[str, Any]]:
     schema = config["database"].get("database_schema", "metadata")
-    table = config["database"].get("database_log_table", "ingestion_log")
+    table = config["database"].get("database_log_table", "ingestion_log") 
 
     conn = _get_db_connection(config)
     try:
@@ -509,7 +509,7 @@ def _ingest_single_service(
         }
     except Exception as exc:
         if isinstance(exc, AirflowSkipException):
-            log_payload["status"] = "SKIPPED"
+            log_payload["status"] = "FAILED"
         log_payload["error_message"] = str(exc)
         raise
     finally:
@@ -530,6 +530,8 @@ def ingest_taxi_to_layer(
     service_types = [service_type.lower()] if service_type else _load_service_types(config)
 
     results: List[Dict[str, Any]] = []
+    missing_sources: List[Dict[str, Any]] = []
+
     for service in service_types:
         try:
             results.append(
@@ -543,18 +545,18 @@ def ingest_taxi_to_layer(
                 )
             )
         except AirflowSkipException as exc:
-            # Missing source for one service should not fail the whole period ingestion.
-            results.append(
-                {
-                    "layer": layer,
-                    "service_type": service,
-                    "year": year,
-                    "month": month,
-                    "status": "SKIPPED",
-                    "reason": "source_not_available",
-                    "error_message": str(exc),
-                }
-            )
+            # Keep observability in returned payload, but fail task after cleanup.
+            skip_result = {
+                "layer": layer,
+                "service_type": service,
+                "year": year,
+                "month": month,
+                "status": "FAILED",
+                "reason": "source_not_available",
+                "error_message": str(exc),
+            }
+            results.append(skip_result)
+            missing_sources.append(skip_result)
 
     cleanup_stats = _run_local_file_cleanup(config=config)
     if cleanup_stats["enabled"]:
@@ -566,6 +568,16 @@ def ingest_taxi_to_layer(
         )
         if cleanup_stats["errors"]:
             print(f"Local cleanup had {len(cleanup_stats['errors'])} errors.")
+
+    if missing_sources:
+        missing_labels = ", ".join(
+            f"{item['service_type']}:{item['year']}-{item['month']:02d}"
+            for item in missing_sources
+        )
+        raise RuntimeError(
+            "Bronze ingestion failed due to source files not available yet for: "
+            f"{missing_labels}"
+        )
 
     if len(results) == 1:
         return results[0]
